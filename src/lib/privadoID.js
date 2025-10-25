@@ -26,10 +26,11 @@ class PrivadoIDService {
 
   async generateProof(credentials) {
     try {
-      console.log('🔄 Requesting credential from issuer...');
+      console.log('🔄 Step 1: Requesting credential from issuer...');
+      console.log('Credentials input:', credentials);
 
-      // Request credential from backend issuer
-      const response = await fetch(`${this.issuerUrl}/api/issue-credential`, {
+      // STEP 1: Issue credential
+      const issueResponse = await fetch(`${this.issuerUrl}/api/issue-credential`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,38 +38,73 @@ class PrivadoIDService {
         body: JSON.stringify(credentials),
       });
 
-      const result = await response.json();
+      if (!issueResponse.ok) {
+        throw new Error(`Failed to issue credential: ${issueResponse.statusText}`);
+      }
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to issue credential');
+      const issueResult = await issueResponse.json();
+
+      if (!issueResult.success) {
+        throw new Error(issueResult.error || 'Failed to issue credential');
       }
 
       console.log('✅ Credential received from issuer');
+      console.log('📄 Credential:', issueResult.credential);
 
-      // Convert to proof format
-      const proof = {
-        proof: JSON.stringify({
-          credential: result.credential,
-          type: 'BackendIssued',
+      // STEP 2: Generate ZK proof using the credential
+      console.log('🔄 Step 2: Generating ZK proof...');
+
+      const proofResponse = await fetch(`${this.issuerUrl}/api/generate-proof`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          credential: issueResult.credential,
+          userAddress: credentials.address // ✅ Pass wallet address
         }),
-        publicSignals: ['1', credentials.isOver18 ? '1' : '0'],
+      });
+
+      if (!proofResponse.ok) {
+        throw new Error(`Failed to generate proof: ${proofResponse.statusText}`);
+      }
+
+      const proofResult = await proofResponse.json();
+
+      if (!proofResult.success) {
+        throw new Error(proofResult.error || 'Failed to generate proof');
+      }
+
+      console.log('✅ ZK Proof generated successfully');
+      console.log('🔐 Proof data:', proofResult);
+
+      // Return complete proof object
+      const completeProof = {
+        proof: proofResult.proof,
+        publicSignals: proofResult.pub_signals || proofResult.publicSignals,
+        pub_signals: proofResult.pub_signals || proofResult.publicSignals,
+        walletAddress: credentials.address, // ✅ Include wallet address
         timestamp: Date.now(),
         proofType: 'age_verification',
+        circuitId: proofResult.circuitId,
+        method: proofResult.method || 'backend',
         claim: {
           type: 'KYCAgeCredential',
           ageOver: 18,
-          verified: credentials.isOver18,
+          verified: true,
         },
+        credential: issueResult.credential,
         metadata: {
-          verifier: 'KYC Platform (Issuer Backend)',
+          verifier: 'KYC Platform',
           algorithm: 'Privado ID',
           version: '1.0.0',
-          issuer: result.credential.issuer,
+          issuer: issueResult.credential.issuer,
+          network: issueResult.network || 'Polygon Amoy',
         },
       };
 
-      console.log('✅ Proof generated successfully');
-      return proof;
+      console.log('✅ Complete proof package ready:', completeProof);
+      return completeProof;
 
     } catch (error) {
       console.error('❌ Error generating proof:', error);
@@ -78,16 +114,50 @@ class PrivadoIDService {
 
   async verifyProof(proofData) {
     try {
-      console.log('🔄 Verifying proof...');
+      console.log('🔄 Verifying proof with backend...');
+      console.log('📦 Proof data to verify:', proofData);
+
+      // Call backend verification endpoint
+      const response = await fetch(`${this.issuerUrl}/api/verify-proof`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          proof: proofData.proof,
+          publicSignals: proofData.publicSignals || proofData.pub_signals,
+          pub_signals: proofData.pub_signals || proofData.publicSignals,
+          walletAddress: proofData.walletAddress, // ✅ Include wallet address
+          circuitId: proofData.circuitId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Verification request failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
       
-      // Simple verification
-      const isValid = proofData && proofData.publicSignals && proofData.publicSignals[0] === '1';
+      console.log('📊 Verification result:', result);
+
+      const isValid = result.success && result.verified && result.decision === 'approved';
       
-      console.log(isValid ? '✅ Proof verified' : '❌ Proof invalid');
-      return isValid;
+      console.log(isValid ? '✅ Proof verified successfully' : '❌ Proof verification failed');
+      
+      return {
+        verified: isValid,
+        result: result,
+        decision: result.decision,
+        reason: result.reason,
+        timestamp: result.timestamp
+      };
+
     } catch (error) {
       console.error('❌ Error verifying proof:', error);
-      return false;
+      return {
+        verified: false,
+        error: error.message
+      };
     }
   }
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { truncateAddress } from '@/lib/utils';
 import KYCForm from '@/components/KYCForm';
+import EnhancedKYCForm from '@/components/EnhancedKYCForm';
 
 export default function Home() {
   const { isConnected, address, connectWallet, disconnect, isConnecting, chainId } = useWallet();
@@ -77,7 +78,7 @@ export default function Home() {
         {/* KYC Form - Only show when wallet is connected */}
         {isConnected && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <KYCForm />
+            <EnhancedKYCForm />
           </div>
         )}
 
