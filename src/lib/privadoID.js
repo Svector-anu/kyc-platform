@@ -1,14 +1,14 @@
 class PrivadoIDService {
   constructor() {
     this.isInitialized = false;
-    this.issuerUrl = 'http://172.20.10.14:4000'; // Backend issuer URL
+    this.issuerUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.14:4000';
   }
 
   async initialize() {
     try {
       console.log('🔄 Checking Privado ID Issuer...');
       
-      const response = await fetch(`${this.issuerUrl}/health`);
+      const response = await fetch(`${this.issuerUrl}/api/health`);
       const data = await response.json();
       
       if (data.status === 'ok') {
@@ -26,8 +26,30 @@ class PrivadoIDService {
 
   async generateProof(credentials) {
     try {
-      console.log('🔄 Step 1: Requesting credential from issuer...');
-      console.log('Credentials input:', credentials);
+      console.log('🔄 Generating proof with backend...');
+      console.log('Input credentials:', credentials);
+
+      // Map frontend credentials to backend format
+      // Form uses 'dob' but backend expects 'dateOfBirth'
+      const backendPayload = {
+        name: credentials.name,
+        dateOfBirth: credentials.dateOfBirth || credentials.dob, // ✅ Handle both!
+        email: credentials.email,
+        walletAddress: credentials.address || credentials.walletAddress
+      };
+
+      console.log('📤 Sending to backend:', backendPayload);
+
+      // Validate all required fields
+      if (!backendPayload.name || !backendPayload.dateOfBirth || !backendPayload.email || !backendPayload.walletAddress) {
+        console.error('❌ Missing fields:', {
+          name: !!backendPayload.name,
+          dateOfBirth: !!backendPayload.dateOfBirth,
+          email: !!backendPayload.email,
+          walletAddress: !!backendPayload.walletAddress
+        });
+        throw new Error('Missing required fields in form');
+      }
 
       // STEP 1: Issue credential
       const issueResponse = await fetch(`${this.issuerUrl}/api/issue-credential`, {
@@ -35,11 +57,12 @@ class PrivadoIDService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(backendPayload),
       });
 
       if (!issueResponse.ok) {
-        throw new Error(`Failed to issue credential: ${issueResponse.statusText}`);
+        const errorText = await issueResponse.text();
+        throw new Error(`Failed to issue credential: ${errorText}`);
       }
 
       const issueResult = await issueResponse.json();
@@ -48,25 +71,27 @@ class PrivadoIDService {
         throw new Error(issueResult.error || 'Failed to issue credential');
       }
 
-      console.log('✅ Credential received from issuer');
-      console.log('📄 Credential:', issueResult.credential);
+      console.log('✅ Credential issued:', issueResult.credential.credentialId);
 
-      // STEP 2: Generate ZK proof using the credential
-      console.log('🔄 Step 2: Generating ZK proof...');
+      // STEP 2: Generate ZK proof
+      console.log('🔄 Generating ZK proof...');
+
+      const proofPayload = {
+        dateOfBirth: credentials.dateOfBirth || credentials.dob, // ✅ Handle both!
+        walletAddress: credentials.address || credentials.walletAddress
+      };
 
       const proofResponse = await fetch(`${this.issuerUrl}/api/generate-proof`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          credential: issueResult.credential,
-          userAddress: credentials.address // ✅ Pass wallet address
-        }),
+        body: JSON.stringify(proofPayload),
       });
 
       if (!proofResponse.ok) {
-        throw new Error(`Failed to generate proof: ${proofResponse.statusText}`);
+        const errorText = await proofResponse.text();
+        throw new Error(`Failed to generate proof: ${errorText}`);
       }
 
       const proofResult = await proofResponse.json();
@@ -76,34 +101,24 @@ class PrivadoIDService {
       }
 
       console.log('✅ ZK Proof generated successfully');
-      console.log('🔐 Proof data:', proofResult);
 
       // Return complete proof object
       const completeProof = {
+        id: proofResult.proof.id,
+        proofId: proofResult.proofId,
         proof: proofResult.proof,
-        publicSignals: proofResult.pub_signals || proofResult.publicSignals,
-        pub_signals: proofResult.pub_signals || proofResult.publicSignals,
-        walletAddress: credentials.address, // ✅ Include wallet address
+        age: proofResult.age,
+        walletAddress: credentials.address || credentials.walletAddress,
         timestamp: Date.now(),
-        proofType: 'age_verification',
-        circuitId: proofResult.circuitId,
-        method: proofResult.method || 'backend',
-        claim: {
-          type: 'KYCAgeCredential',
-          ageOver: 18,
-          verified: true,
-        },
         credential: issueResult.credential,
         metadata: {
-          verifier: 'KYC Platform',
-          algorithm: 'Privado ID',
-          version: '1.0.0',
-          issuer: issueResult.credential.issuer,
-          network: issueResult.network || 'Polygon Amoy',
+          credentialId: issueResult.credential.credentialId,
+          issuer: issueResult.credential.credential.issuer,
+          network: issueResult.credential.credential.metadata.network,
         },
       };
 
-      console.log('✅ Complete proof package ready:', completeProof);
+      console.log('✅ Complete proof ready:', completeProof.proofId);
       return completeProof;
 
     } catch (error) {
@@ -115,20 +130,14 @@ class PrivadoIDService {
   async verifyProof(proofData) {
     try {
       console.log('🔄 Verifying proof with backend...');
-      console.log('📦 Proof data to verify:', proofData);
 
-      // Call backend verification endpoint
       const response = await fetch(`${this.issuerUrl}/api/verify-proof`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          proof: proofData.proof,
-          publicSignals: proofData.publicSignals || proofData.pub_signals,
-          pub_signals: proofData.pub_signals || proofData.publicSignals,
-          walletAddress: proofData.walletAddress, // ✅ Include wallet address
-          circuitId: proofData.circuitId
+          proof: proofData.proof
         }),
       });
 
@@ -140,15 +149,14 @@ class PrivadoIDService {
       
       console.log('📊 Verification result:', result);
 
-      const isValid = result.success && result.verified && result.decision === 'approved';
+      const isValid = result.success && result.valid && result.valid.valid === true;
       
-      console.log(isValid ? '✅ Proof verified successfully' : '❌ Proof verification failed');
+      console.log(isValid ? '✅ Proof verified' : '❌ Proof invalid');
       
       return {
         verified: isValid,
         result: result,
-        decision: result.decision,
-        reason: result.reason,
+        details: result.valid?.details,
         timestamp: result.timestamp
       };
 
