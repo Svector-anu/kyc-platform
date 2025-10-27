@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProof } from '@/hooks/useProof';
 import { useWallet } from '@/hooks/useWallet';
+import { browserWallet } from '@/services/browserWallet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,40 +153,100 @@ const EnhancedKYCForm = () => {
 
     const handleGenerateProof = async () => {
         try {
-            const calculatedAge = calculateAge(formData.dob);
+            console.log('🚀 Starting HOLDER-CONTROLLED ZK Proof Flow...');
 
-            const credentials = {
-                name: formData.name,
-                dob: formData.dob,
-                age: calculatedAge,
-                email: formData.email,
-                address: address,
-                isOver18: calculatedAge >= 18,
-            };
+            // STEP 1: Initialize browser wallet (creates user DID)
+            console.log('Step 1: Initializing browser wallet...');
+            await browserWallet.initialize();
+            const userDID = browserWallet.getUserDID();
+            console.log('✅ User DID created:', userDID);
 
-            // Generate proof
-            const generatedProof = await generateProof(credentials);
-            console.log('Generated proof:', generatedProof);
+            // STEP 2: Request credential from issuer
+            console.log('Step 2: Requesting credential from issuer...');
+            const issueResponse = await fetch('http://localhost:4000/api/issue-credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    dateOfBirth: formData.dob,
+                    email: formData.email,
+                    walletAddress: address // Still used for identification
+                })
+            });
 
-            setSuccess(true);
-            setCurrentStep(4);
+            if (!issueResponse.ok) {
+                throw new Error('Failed to issue credential');
+            }
 
-            // Save to localStorage for dashboard
-            const existingProofs = JSON.parse(localStorage.getItem('kycProofs') || '[]');
-            const newProof = {
-                id: Date.now(),
-                timestamp: new Date().toISOString(),
-                name: formData.name,
-                email: formData.email,
-                ageVerified: true,
-                status: 'pending',
-                proofData: generatedProof,
-            };
+            const { credential } = await issueResponse.json();
+            console.log('✅ Credential received from issuer');
 
-            console.log('Saving proof to localStorage:', newProof);
-            localStorage.setItem('kycProofs', JSON.stringify([...existingProofs, newProof]));
+            // STEP 3: Save credential to user's wallet (IndexedDB)
+            console.log('Step 3: Saving credential to browser wallet...');
+            await browserWallet.receiveCredential(credential);
+            console.log('✅ Credential saved to wallet');
+
+            // STEP 4: Get verification request from backend
+            console.log('Step 4: Getting verification request...');
+            const verifyRequestResponse = await fetch('http://localhost:4000/api/create-verification-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ minAge: 18 })
+            });
+
+            if (!verifyRequestResponse.ok) {
+                throw new Error('Failed to create verification request');
+            }
+
+            const { proofRequest } = await verifyRequestResponse.json();
+            console.log('✅ Proof request received');
+
+            // STEP 5: Generate proof CLIENT-SIDE (THIS IS THE KEY!)
+            console.log('Step 5: Generating ZK proof in browser (5-15 seconds)...');
+            console.log('⚠️  Your birthday NEVER leaves your browser!');
+            const zkProof = await browserWallet.generateProof(proofRequest);
+            console.log('✅ ZK proof generated client-side!');
+
+            // STEP 6: Submit proof to verifier
+            console.log('Step 6: Submitting proof to verifier...');
+            const verifyProofResponse = await fetch('http://localhost:4000/api/verify-proof', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ proof: zkProof })
+            });
+
+            if (!verifyProofResponse.ok) {
+                throw new Error('Failed to verify proof');
+            }
+
+            const { valid } = await verifyProofResponse.json();
+            console.log('✅ Proof verified:', valid);
+
+            if (valid) {
+                setSuccess(true);
+                setCurrentStep(4);
+
+                // Save to localStorage for dashboard
+                const existingProofs = JSON.parse(localStorage.getItem('kycProofs') || '[]');
+                const newProof = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    name: formData.name,
+                    email: formData.email,
+                    ageVerified: true,
+                    status: 'verified',
+                    proofData: zkProof,
+                    userDID: userDID
+                };
+
+                console.log('Saving proof to localStorage:', newProof);
+                localStorage.setItem('kycProofs', JSON.stringify([...existingProofs, newProof]));
+            } else {
+                throw new Error('Proof verification failed');
+            }
 
         } catch (err) {
+            console.error('❌ Error in ZK proof flow:', err);
             setError(err.message || 'Failed to generate proof');
             console.error('Proof generation error:', err);
         }
