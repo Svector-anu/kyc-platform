@@ -163,6 +163,7 @@ const EnhancedKYCForm = () => {
 
             // STEP 2: Request credential from issuer
             console.log('Step 2: Requesting credential from issuer...');
+            console.log('   User DID:', userDID);
             const issueResponse = await fetch('http://localhost:4000/api/issue-credential', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -170,7 +171,8 @@ const EnhancedKYCForm = () => {
                     name: formData.name,
                     dateOfBirth: formData.dob,
                     email: formData.email,
-                    walletAddress: address // Still used for identification
+                    walletAddress: address, // For identification/tracking
+                    userDID: userDID // CRITICAL: Use user's actual DID, not wallet address!
                 })
             });
 
@@ -180,6 +182,7 @@ const EnhancedKYCForm = () => {
 
             const { credential } = await issueResponse.json();
             console.log('✅ Credential received from issuer');
+            console.log('🔍 DEBUG: Raw credential from backend:', JSON.stringify(credential, null, 2));
 
             // STEP 3: Save credential to user's wallet (IndexedDB)
             console.log('Step 3: Saving credential to browser wallet...');
