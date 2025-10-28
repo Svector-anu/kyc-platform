@@ -1,6 +1,6 @@
 'use client'
 
-import EnhancedKYCForm from '@/components/EnhancedKYCForm'
+import MobileWalletKYC from '@/components/MobileWalletKYC'
 
 export default function HomePage() {
   return (
@@ -9,18 +9,18 @@ export default function HomePage() {
       <section className="bg-gradient-brand py-20 text-white">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold mb-6">
-            Zero-knowledge KYC for humans and AI agents.
+            Zero-knowledge KYC with Polygon ID
           </h1>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Generate private proofs of eligibility without revealing personal data.
+            Prove your age without revealing your birthday using zero-knowledge proofs and your mobile wallet.
           </p>
         </div>
       </section>
-      
+
       {/* KYC Form Section */}
-      <section className="py-16">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 max-w-2xl">
-          <EnhancedKYCForm />
+          <MobileWalletKYC />
         </div>
       </section>
     </div>
