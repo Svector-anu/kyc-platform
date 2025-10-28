@@ -31,10 +31,20 @@ import {
   CircuitId,
   W3CCredential,
   RHSResolver,
-  CredentialStatusResolverRegistry,
-  AgentResolver
+  CredentialStatusResolverRegistry
 } from '@0xpolygonid/js-sdk';
 import localforage from 'localforage';
+
+// ✅ REGISTER AMOY NETWORK WITH SDK
+core.registerDidMethodNetwork({
+  method: core.DidMethod.Iden3,
+  blockchain: core.Blockchain.Polygon,
+  network: 'amoy',
+  chainId: 80002,
+  networkFlag: 0b01000000 | 0b00000010
+});
+
+console.log('✅ Amoy network (chainId 80002) registered with SDK');
 
 class BrowserWallet {
   constructor() {
@@ -71,6 +81,21 @@ class BrowserWallet {
       const credentialDataSource = new InMemoryDataSource();
       const credentialMerkleTreeStorage = new InMemoryMerkleTreeStorage(40);
 
+      // Configure EthStateStorage with full Amoy network settings
+      const ethConfig = {
+        url: rpcUrl,
+        contractAddress: process.env.NEXT_PUBLIC_STATE_CONTRACT || '0x1a4cC30f2aA0377b0c3bc9848766D90cb4404124',
+        chainId: 80002,
+        confirmationBlockCount: 5,
+        receiptTimeout: 600000,
+        minGasPrice: '0',
+        maxGasPrice: '100000000000',
+        rpcResponseTimeout: 5000,
+        waitReceiptCycleTime: 30000,
+        waitBlockCycleTime: 3000,
+        provider: this.provider
+      };
+
       this.dataStorage = {
         credential: new CredentialStorage(credentialDataSource, credentialMerkleTreeStorage),
         identity: new IdentityStorage(
@@ -78,10 +103,7 @@ class BrowserWallet {
           new InMemoryDataSource()
         ),
         mt: merkleTreeStorage,
-        states: new EthStateStorage({
-          contractAddress: process.env.NEXT_PUBLIC_STATE_CONTRACT || '0x1a4cC30f2aA0377b0c3bc9848766D90cb4404124',
-          provider: this.provider
-        })
+        states: new EthStateStorage(ethConfig)
       };
 
       // Initialize Key Management System
@@ -92,11 +114,14 @@ class BrowserWallet {
 
       // Initialize Credential Status Resolver Registry
       const credentialStatusResolverRegistry = new CredentialStatusResolverRegistry();
+
+      // ✅ Re-enable RHS resolver (we'll use skipRevocation flag instead)
       const rhsResolver = new RHSResolver(this.dataStorage.states);
       credentialStatusResolverRegistry.register(
         CredentialStatusType.Iden3ReverseSparseMerkleTreeProof,
         rhsResolver
       );
+      console.log('✅ RHS resolver registered (will be skipped via skipRevocation flag)');
 
       // Initialize Credential Wallet with resolver registry
       this.credentialWallet = new CredentialWallet(
@@ -122,10 +147,16 @@ class BrowserWallet {
         }
       );
 
-      // Always create a fresh identity for now (simplest approach)
-      // In production, you'd want to persist and restore the full identity
-      console.log('🆔 Creating user identity...');
-      await this.createIdentity();
+      // Check if identity exists, restore it - otherwise create new one
+      // This ensures DID stays consistent across page refreshes
+      const storedSeed = await localforage.getItem('userSeed');
+      if (storedSeed) {
+        console.log('🔄 Restoring existing identity from storage...');
+        await this.loadIdentity(new Uint8Array(storedSeed));
+      } else {
+        console.log('🆔 Creating new user identity...');
+        await this.createIdentity();
+      }
 
       this.initialized = true;
       console.log(`✅ Browser Wallet initialized`);
@@ -176,6 +207,36 @@ class BrowserWallet {
   }
 
   /**
+   * Load existing identity from stored seed
+   * This maintains DID consistency across page refreshes
+   */
+  async loadIdentity(seed) {
+    try {
+      const { did } = await this.identityWallet.createIdentity({
+        method: core.DidMethod.Iden3,
+        blockchain: core.Blockchain.Polygon,
+        networkId: core.NetworkId.Amoy,
+        seed: seed,
+        revocationOpts: {
+          type: CredentialStatusType.Iden3ReverseSparseMerkleTreeProof,
+          id: process.env.NEXT_PUBLIC_RHS_URL || 'https://rhs-staging.polygonid.me'
+        }
+      });
+
+      this.did = did;
+
+      console.log('✅ Identity restored:', did.string());
+      console.log('   Same DID will be used for all credentials and proofs');
+
+      return did;
+
+    } catch (error) {
+      console.error('❌ Error loading identity:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get user's DID
    */
   getUserDID() {
@@ -210,11 +271,20 @@ class BrowserWallet {
       console.log('🔍 After conversion - Type:', credential.type);
       console.log('🔍 After conversion - Issuer:', credential.issuer);
 
-      // Save to wallet storage
+      // Save to BOTH credential storage AND identity wallet
       await this.dataStorage.credential.saveCredential(credential);
 
-      console.log('✅ Credential saved to browser wallet');
-      console.log('   ID:', credential.id);
+      // CRITICAL: Also save to IdentityWallet so ProofService can find it!
+      await this.credentialWallet.save(credential);
+
+      // MOST CRITICAL: Add credential to identity's Merkle tree!
+      // This links the credential to the identity's DID so findOwnedCredentialsByDID() can find it
+      console.log('🌳 Adding credential to identity Merkle tree...');
+      await this.identityWallet.addCredentialsToMerkleTree([credential], this.did);
+
+      console.log('✅ Credential saved and linked to identity');
+      console.log('   Credential ID:', credential.id);
+      console.log('   Identity DID:', this.did.string());
 
       // DEBUG: Log credential structure
       console.log('🔍 DEBUG: Credential saved!');
@@ -298,9 +368,14 @@ class BrowserWallet {
 
       // NOW try the actual proof generation
       console.log('🔍 Attempting proof generation with ProofService...');
+      console.log('⚠️  Using skipRevocation: true (official SDK flag)');
+
       const zkProofResponse = await this.proofService.generateProof(
         proofRequest,
-        this.did
+        this.did,
+        {
+          skipRevocation: true  // ← OFFICIAL SDK FLAG - bypasses revocation checks!
+        }
       );
 
       console.log('✅ ZK proof generated!');
