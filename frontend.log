@@ -15,52 +15,124 @@
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 3s
- ○ Compiling / ...
- ✓ Compiled / in 3.6s (807 modules)
- GET / 200 in 4449ms
- ✓ Compiled in 409ms (293 modules)
- ○ Compiling /favicon.ico ...
- ✓ Compiled /favicon.ico in 1882ms (531 modules)
- GET /favicon.ico 200 in 2052ms
- GET /favicon.ico 200 in 12ms
- ○ Compiling /agents ...
- ✓ Compiled /agents in 897ms (814 modules)
- GET /agents 200 in 1147ms
- ✓ Compiled /agents/register in 392ms (833 modules)
- GET /agents/register 200 in 621ms
- ✓ Compiled /agents/[did] in 421ms (846 modules)
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 1299ms
- ○ Compiling /agents/[did]/attest ...
- ✓ Compiled /agents/[did]/attest in 797ms (855 modules)
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t/attest 200 in 1772ms
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t/attest 200 in 38ms
+ ✓ Ready in 2.8s
+ ⚠ Cross origin request detected from 172.20.10.14 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 2.5s (2004 modules)
- GET /dashboard 200 in 2659ms
- ✓ Compiled /favicon.ico in 471ms (1143 modules)
- GET /favicon.ico 200 in 680ms
- GET /dashboard 200 in 122ms
- GET /agents 200 in 57ms
- GET / 200 in 42ms
- GET / 200 in 337ms
- GET /favicon.ico 200 in 13ms
- GET /favicon.ico 200 in 18ms
- GET /favicon.ico 200 in 13ms
+ ✓ Compiled /dashboard in 10.4s (1791 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard 200 in 10560ms
+ ✓ Compiled in 1446ms (818 modules)
+ GET /dashboard 200 in 497ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.4s (980 modules)
+ GET /favicon.ico 200 in 2560ms
  GET /favicon.ico 200 in 10ms
- GET /agents 200 in 47ms
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 51ms
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 33ms
- GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 36ms
- GET /agents 200 in 25ms
- GET /dashboard 200 in 27ms
- GET /agents 200 in 37ms
- GET / 200 in 34ms
+ ○ Compiling /agents ...
+ ✓ Compiled /agents in 570ms (1795 modules)
+ GET /agents 200 in 712ms
+ ○ Compiling / ...
+ ✓ Compiled / in 940ms (1985 modules)
+ GET / 200 in 1069ms
+ GET / 200 in 257ms
+ ✓ Compiled in 1429ms (1976 modules)
+ GET / 200 in 234ms
+ ✓ Compiled in 537ms (1976 modules)
+ GET / 200 in 142ms
+ GET / 200 in 282ms
+ ✓ Compiled /favicon.ico in 356ms (1114 modules)
+ GET /favicon.ico 200 in 531ms
+ GET /favicon.ico 200 in 14ms
+ ✓ Compiled in 624ms (1992 modules)
+ GET / 200 in 173ms
+ ✓ Compiled in 1274ms (1976 modules)
+ GET / 200 in 240ms
+ ✓ Compiled in 778ms (1976 modules)
+ GET / 200 in 194ms
+ GET /dashboard 200 in 50ms
+ ○ Compiling /agents ...
+ ✓ Compiled /agents in 709ms (1105 modules)
+ GET /agents 200 in 834ms
+ GET /dashboard 200 in 49ms
+ GET / 200 in 41ms
+ ✓ Compiled in 576ms (878 modules)
+ GET / 200 in 134ms
+ ✓ Compiled in 952ms (1976 modules)
+ GET / 200 in 174ms
+ ✓ Compiled /agents in 229ms (1105 modules)
+ GET /agents 200 in 342ms
+ GET / 200 in 40ms
+ GET / 200 in 340ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 974ms (1121 modules)
+ GET /favicon.ico 200 in 1155ms
+ GET /favicon.ico 200 in 14ms
+ ✓ Compiled in 1384ms (1999 modules)
+ GET / 200 in 155ms
+ GET / 200 in 441ms
+ GET /agents 200 in 84ms
+ GET /dashboard 200 in 90ms
+ GET /agents 200 in 52ms
+ GET /dashboard 200 in 33ms
+ GET / 200 in 25ms
  GET /agents 200 in 41ms
- GET /dashboard 200 in 24ms
- GET /agents 200 in 40ms
- GET /dashboard 200 in 30ms
- GET /agents 200 in 36ms
+ GET /dashboard 200 in 29ms
+ GET / 200 in 42ms
+ GET / 200 in 152ms
+ GET /favicon.ico 200 in 137ms
+ GET /favicon.ico 200 in 23ms
+ ✓ Compiled in 918ms (878 modules)
+ GET / 200 in 40ms
+ ✓ Compiled in 549ms (878 modules)
+ GET / 200 in 46ms
+ GET / 200 in 153ms
+ GET /favicon.ico 200 in 35ms
+ GET /favicon.ico 200 in 22ms
+ ✓ Compiled in 962ms (1980 modules)
+ GET / 200 in 216ms
+ ✓ Compiled /agents in 396ms (1107 modules)
+ GET /agents 200 in 560ms
+ GET / 200 in 43ms
+ GET /agents 200 in 43ms
+ GET /dashboard 200 in 42ms
+ GET / 200 in 60ms
+ ✓ Compiled in 1499ms (839 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 154ms
+ GET / 200 in 310ms
+ ✓ Compiled /favicon.ico in 251ms (550 modules)
+ GET /favicon.ico 200 in 430ms
+ GET /favicon.ico 200 in 10ms
+ ✓ Compiled in 448ms (856 modules)
+ GET / 200 in 143ms
+ ✓ Compiled in 395ms (856 modules)
+ GET / 200 in 110ms
+ GET /agents 200 in 53ms
+ GET /dashboard 200 in 48ms
+ GET / 200 in 28ms
+ GET /agents 200 in 46ms
+ GET /dashboard 200 in 39ms
+ GET / 200 in 27ms
+ GET /dashboard 200 in 31ms
  GET / 200 in 31ms
- GET /agents 200 in 23ms
- GET /dashboard 200 in 37ms
+ GET /agents 200 in 46ms
+ GET /dashboard 200 in 48ms
+ GET / 200 in 115ms
+ GET /dashboard 200 in 52ms
+ GET /agents 200 in 31ms
+ GET / 200 in 35ms
+ ✓ Compiled in 1007ms (825 modules)
+ GET / 200 in 202ms
+ GET /agents 200 in 65ms
+ ○ Compiling /agents/[did] ...
+ ✓ Compiled /agents/[did] in 1682ms (836 modules)
+ GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 2661ms
+ GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 36ms
+ GET /dashboard 200 in 62ms
+ GET /agents 200 in 71ms
+ GET / 200 in 52ms
+ GET /dashboard?credentialId=urn%3A23141b9a-7c31-4547-9082-c5a1b8a90e1c 200 in 58ms
+ GET /dashboard 200 in 24ms
+ GET /agents 200 in 24ms
+ GET / 200 in 43ms
