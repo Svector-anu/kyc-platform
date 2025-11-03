@@ -10,7 +10,7 @@ export default function ServerSideKYC() {
     name: '',
     dateOfBirth: '',
     email: '',
-    walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+    walletAddress: ''
   });
   const [step, setStep] = useState('form');
   const [credentialId, setCredentialId] = useState('');
@@ -36,6 +36,8 @@ export default function ServerSideKYC() {
 
       if (response.data.success) {
         setCredentialId(response.data.credential.credentialId);
+        // Store wallet address for later use (agent registration, attestations, etc.)
+        localStorage.setItem('walletAddress', formData.walletAddress);
         setStep('credential-issued');
       }
     } catch (err) {
@@ -91,7 +93,7 @@ export default function ServerSideKYC() {
       name: '',
       dateOfBirth: '',
       email: '',
-      walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+      walletAddress: ''
     });
     setStep('form');
     setCredentialId('');

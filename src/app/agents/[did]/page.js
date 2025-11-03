@@ -7,30 +7,32 @@ import { ArrowLeft, Star, Copy, Check } from 'lucide-react'
 
 export default function AgentDetailPage() {
   const params = useParams()
-  const did = decodeURIComponent(params.did)
-  
+  const publicIdOrDID = decodeURIComponent(params.did)
+
   const [agent, setAgent] = useState(null)
   const [reputation, setReputation] = useState(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [showUseModal, setShowUseModal] = useState(false)
 
   useEffect(() => {
     fetchAgentDetails()
-  }, [did])
+  }, [publicIdOrDID])
 
   async function fetchAgentDetails() {
     try {
-      const res = await fetch(`http://localhost:4000/api/agents/${encodeURIComponent(did)}/reputation`)
+      const res = await fetch(`http://localhost:4000/api/agents/${encodeURIComponent(publicIdOrDID)}/reputation`)
       const data = await res.json()
-      
+
       if (data.success) {
         setReputation(data.reputation)
         setAgent({
-          agentDID: data.reputation.agentDID,
+          publicId: data.reputation.publicId,
           agentName: data.reputation.agentName,
           agentType: data.reputation.agentType,
           description: data.reputation.description,
           capabilities: data.reputation.capabilities,
+          ownerDeveloperDID: data.reputation.ownerDeveloperDID,
           createdAt: data.reputation.createdAt,
         })
       }
@@ -41,8 +43,8 @@ export default function AgentDetailPage() {
     }
   }
 
-  function copyDID() {
-    navigator.clipboard.writeText(did)
+  function copyPublicId() {
+    navigator.clipboard.writeText(publicIdOrDID)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -86,18 +88,26 @@ export default function AgentDetailPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">{agent.agentName}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <code className="bg-muted px-2 py-1 rounded font-mono text-xs">
-              {did.split(':').pop().slice(0, 20)}...
+              {publicIdOrDID.includes(':') ? publicIdOrDID.split(':').pop().slice(0, 20) : publicIdOrDID.slice(0, 20)}...
             </code>
             <button
-              onClick={copyDID}
+              onClick={copyPublicId}
               className="p-1 hover:text-foreground transition-colors"
-              title="Copy DID"
+              title="Copy Public ID"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
+          {agent.ownerDeveloperDID && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="text-xs">Owner:</span>
+              <code className="bg-muted px-2 py-1 rounded font-mono text-xs">
+                {agent.ownerDeveloperDID.split(':').pop().slice(0, 20)}...
+              </code>
+            </div>
+          )}
         </div>
 
         {/* Overview Section */}
@@ -232,8 +242,14 @@ export default function AgentDetailPage() {
 
         {/* Actions */}
         <div className="flex gap-4">
+          <button
+            onClick={() => setShowUseModal(true)}
+            className="flex-1 text-center py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+          >
+            Use Agent
+          </button>
           <Link
-            href={`/agents/${encodeURIComponent(did)}/attest`}
+            href={`/agents/${encodeURIComponent(publicIdOrDID)}/attest`}
             className="flex-1 text-center py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-secondary transition-all"
           >
             Attest Agent
@@ -243,6 +259,195 @@ export default function AgentDetailPage() {
             disabled
           >
             Request Proof
+          </button>
+        </div>
+      </div>
+
+      {/* Use Agent Modal */}
+      {showUseModal && agent && (
+        <UseAgentModal
+          agent={agent}
+          publicId={publicIdOrDID}
+          onClose={() => setShowUseModal(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+function UseAgentModal({ agent, publicId, onClose }) {
+  const [action, setAction] = useState('echo')
+  const [payload, setPayload] = useState({ text: '', url: '', city: '', date: '' })
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleUse() {
+    setLoading(true)
+    setError(null)
+    setResult(null)
+
+    try {
+      const userWallet = localStorage.getItem('walletAddress')
+      if (!userWallet) {
+        setError('Please complete KYC verification first')
+        setLoading(false)
+        return
+      }
+
+      let actionPayload = {}
+      if (action === 'echo') {
+        actionPayload = { text: payload.text }
+      } else if (action === 'fetch-url') {
+        actionPayload = { url: payload.url }
+      } else if (action === 'book-intent') {
+        actionPayload = { city: payload.city, date: payload.date }
+      }
+
+      const res = await fetch(`http://localhost:4000/api/agents/${publicId}/use`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userWallet,
+          action,
+          payload: actionPayload
+        })
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setResult(data.result)
+      } else {
+        setError(data.error || 'Failed to use agent')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">Use Agent</h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Agent Name */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+          <p className="text-sm text-gray-600">Agent</p>
+          <p className="font-semibold text-gray-900">{agent.agentName}</p>
+        </div>
+
+        {/* Action Selector */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+          <select
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+          >
+            <option value="echo">Echo (Mock)</option>
+            <option value="fetch-url">Fetch URL (Real)</option>
+            <option value="book-intent">Book Intent (Mock)</option>
+          </select>
+        </div>
+
+        {/* Dynamic Payload Inputs */}
+        <div className="mb-4">
+          {action === 'echo' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Text</label>
+              <input
+                type="text"
+                value={payload.text}
+                onChange={(e) => setPayload({ ...payload, text: e.target.value })}
+                placeholder="Enter text to echo..."
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+          )}
+
+          {action === 'fetch-url' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+              <input
+                type="url"
+                value={payload.url}
+                onChange={(e) => setPayload({ ...payload, url: e.target.value })}
+                placeholder="https://example.com"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+          )}
+
+          {action === 'book-intent' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                <input
+                  type="text"
+                  value={payload.city}
+                  onChange={(e) => setPayload({ ...payload, city: e.target.value })}
+                  placeholder="Lagos"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  value={payload.date}
+                  onChange={(e) => setPayload({ ...payload, date: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Result Display */}
+        {result && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+            <p className="text-sm font-medium text-green-900 mb-2">Result:</p>
+            <pre className="text-xs text-green-800 overflow-auto max-h-64 whitespace-pre-wrap">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUse}
+            disabled={loading}
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Using...' : 'Use Agent'}
           </button>
         </div>
       </div>

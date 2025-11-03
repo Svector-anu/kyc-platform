@@ -12,25 +12,32 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // In a real app, fetch credential data from backend
-    // For now, using mock data
-    if (credentialId) {
-      setTimeout(() => {
-        setCredential({
-          id: credentialId,
-          status: 'Verified',
-          issueDate: new Date().toLocaleDateString(),
-          did: 'did:polygonid:polygon:amoy:2qFUBLaYcuvZq7CRD3y7GPHiApg76WU8vK7LE3LW6K',
-          owner: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-          credentialType: 'KYCAgeCredential',
-          network: 'Polygon Amoy',
-          proofType: 'Groth16'
-        })
+    async function fetchCredential() {
+      if (!credentialId) {
         setLoading(false)
-      }, 500)
-    } else {
-      setLoading(false)
+        return
+      }
+
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+        const response = await fetch(`${API_URL}/api/credential/${credentialId}`)
+        const data = await response.json()
+
+        if (data.success && data.credential) {
+          setCredential(data.credential)
+        } else {
+          console.error('Failed to fetch credential:', data.error)
+          setCredential(null)
+        }
+      } catch (error) {
+        console.error('Error fetching credential:', error)
+        setCredential(null)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchCredential()
   }, [credentialId])
 
   const handleDownloadJSON = () => {

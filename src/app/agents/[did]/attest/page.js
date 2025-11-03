@@ -8,8 +8,8 @@ import { ArrowLeft, Star, Loader2 } from 'lucide-react'
 export default function AttestAgentPage() {
   const params = useParams()
   const router = useRouter()
-  const did = decodeURIComponent(params.did)
-  
+  const publicIdOrDID = decodeURIComponent(params.did)
+
   const [agent, setAgent] = useState(null)
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
@@ -19,11 +19,11 @@ export default function AttestAgentPage() {
 
   useEffect(() => {
     fetchAgent()
-  }, [did])
+  }, [publicIdOrDID])
 
   async function fetchAgent() {
     try {
-      const res = await fetch(`http://localhost:4000/api/agents/${encodeURIComponent(did)}`)
+      const res = await fetch(`http://localhost:4000/api/agents/${encodeURIComponent(publicIdOrDID)}`)
       const data = await res.json()
       if (data.success) {
         setAgent(data.agent)
@@ -35,7 +35,7 @@ export default function AttestAgentPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    
+
     if (rating === 0) {
       setError('Please select a rating')
       return
@@ -45,25 +45,30 @@ export default function AttestAgentPage() {
     setLoading(true)
 
     try {
-      // Replace with actual wallet address
-      const attesterWallet = '0x' + Math.random().toString(16).slice(2, 42)
+      // Get wallet address from localStorage (stored during KYC)
+      const attesterWallet = localStorage.getItem('walletAddress')
+
+      if (!attesterWallet) {
+        setError('Please complete KYC verification first')
+        setLoading(false)
+        return
+      }
 
       const res = await fetch('http://localhost:4000/api/agents/attest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agentDID: did,
+          publicId: publicIdOrDID, // Use publicId instead of agentDID
           attesterWallet,
           rating,
           comment,
-          isKYCVerified: false, // Can check actual KYC status
         }),
       })
 
       const data = await res.json()
 
       if (data.success) {
-        router.push(`/agents/${encodeURIComponent(did)}`)
+        router.push(`/agents/${encodeURIComponent(publicIdOrDID)}`)
       } else {
         setError(data.error || 'Attestation failed')
       }
@@ -77,8 +82,8 @@ export default function AttestAgentPage() {
   return (
     <div className="min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-2xl">
-        <Link 
-          href={`/agents/${encodeURIComponent(did)}`}
+        <Link
+          href={`/agents/${encodeURIComponent(publicIdOrDID)}`}
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -162,7 +167,7 @@ export default function AttestAgentPage() {
                 {loading ? 'Submitting...' : 'Submit Attestation'}
               </button>
               <Link
-                href={`/agents/${encodeURIComponent(did)}`}
+                href={`/agents/${encodeURIComponent(publicIdOrDID)}`}
                 className="px-6 py-3 border border-border rounded-lg hover:bg-muted transition-colors"
               >
                 Cancel

@@ -34,7 +34,7 @@ export default function AgentsPage() {
     .filter(a => {
       const matchesSearch =
         a.agentName.toLowerCase().includes(search.toLowerCase()) ||
-        a.agentDID.toLowerCase().includes(search.toLowerCase())
+        (a.publicId && a.publicId.toLowerCase().includes(search.toLowerCase()))
       const matchesCategory =
         selectedCategory === 'All' || a.trustLevel === selectedCategory
       return matchesSearch && matchesCategory
@@ -200,7 +200,7 @@ export default function AgentsPage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filtered.map((agent) => (
-                <AgentCard key={agent.agentDID} agent={agent} />
+                <AgentCard key={agent.publicId || agent.agentDID} agent={agent} />
               ))}
             </div>
           )}
@@ -220,32 +220,37 @@ export default function AgentsPage() {
 }
 
 function AgentCard({ agent }) {
-  const shortDID = agent.agentDID.split(':').pop().slice(0, 12) + '...'
+  const [showUseModal, setShowUseModal] = useState(false)
+  const publicIdOrDID = agent.publicId || agent.agentDID
+  const shortId = publicIdOrDID.includes(':')
+    ? publicIdOrDID.split(':').pop().slice(0, 12) + '...'
+    : publicIdOrDID.slice(0, 12) + '...'
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all hover:scale-[1.02] group">
-      {/* Agent Icon & Name */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center flex-1">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
-            <span className="text-white text-xl font-bold">
-              {agent.agentName.charAt(0).toUpperCase()}
-            </span>
+    <>
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all hover:scale-[1.02] group">
+        {/* Agent Icon & Name */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center flex-1">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
+              <span className="text-white text-xl font-bold">
+                {agent.agentName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 truncate">{agent.agentName}</h3>
+              <p className="text-xs text-gray-500 font-mono truncate">{shortId}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 truncate">{agent.agentName}</h3>
-            <p className="text-xs text-gray-500 font-mono truncate">{shortDID}</p>
-          </div>
+          <Link
+            href={`/agents/${encodeURIComponent(publicIdOrDID)}`}
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </Link>
         </div>
-        <Link
-          href={`/agents/${encodeURIComponent(agent.agentDID)}`}
-          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </Link>
-      </div>
 
       {/* Rating */}
       <div className="flex items-center gap-2 mb-4">
@@ -265,7 +270,7 @@ function AgentCard({ agent }) {
             </svg>
           ))}
         </div>
-        <span className="text-sm font-bold text-gray-900">{agent.trustScore.toFixed(1)}</span>
+        <span className="text-sm font-bold text-gray-900">{typeof agent.trustScore === 'number' ? agent.trustScore.toFixed(1) : parseFloat(agent.trustScore || 0).toFixed(1)}</span>
         <span className="text-xs text-gray-500">
           ({agent.attestationCount} attestations)
         </span>
@@ -289,13 +294,212 @@ function AgentCard({ agent }) {
         </span>
       </div>
 
-      {/* View Details Button */}
-      <Link
-        href={`/agents/${encodeURIComponent(agent.agentDID)}`}
-        className="block w-full text-center py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:text-white hover:border-transparent transition-all"
-      >
-        View Details
-      </Link>
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setShowUseModal(true)}
+          className="flex-1 text-center py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+        >
+          Use Agent
+        </button>
+        <Link
+          href={`/agents/${encodeURIComponent(publicIdOrDID)}`}
+          className="flex-1 text-center py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+        >
+          View Details
+        </Link>
+      </div>
+    </div>
+
+    {/* Use Agent Modal */}
+    {showUseModal && (
+      <UseAgentModal
+        agent={agent}
+        publicId={publicIdOrDID}
+        onClose={() => setShowUseModal(false)}
+      />
+    )}
+    </>
+  )
+}
+
+function UseAgentModal({ agent, publicId, onClose }) {
+  const [action, setAction] = useState('echo')
+  const [payload, setPayload] = useState({ text: '', url: '', city: '', date: '' })
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleUse() {
+    setLoading(true)
+    setError(null)
+    setResult(null)
+
+    try {
+      // Get wallet address from localStorage (assuming it's stored during KYC)
+      const userWallet = localStorage.getItem('walletAddress')
+      if (!userWallet) {
+        setError('Please connect your wallet first')
+        setLoading(false)
+        return
+      }
+
+      let actionPayload = {}
+      if (action === 'echo') {
+        actionPayload = { text: payload.text }
+      } else if (action === 'fetch-url') {
+        actionPayload = { url: payload.url }
+      } else if (action === 'book-intent') {
+        actionPayload = { city: payload.city, date: payload.date }
+      }
+
+      const res = await fetch(`http://localhost:4000/api/agents/${publicId}/use`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userWallet,
+          action,
+          payload: actionPayload
+        })
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setResult(data.result)
+      } else {
+        setError(data.error || 'Failed to use agent')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">Use Agent</h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Agent Name */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+          <p className="text-sm text-gray-600">Agent</p>
+          <p className="font-semibold text-gray-900">{agent.agentName}</p>
+        </div>
+
+        {/* Action Selector */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+          <select
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+          >
+            <option value="echo">Echo (Mock)</option>
+            <option value="fetch-url">Fetch URL (Real)</option>
+            <option value="book-intent">Book Intent (Mock)</option>
+          </select>
+        </div>
+
+        {/* Dynamic Payload Inputs */}
+        <div className="mb-4">
+          {action === 'echo' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Text</label>
+              <input
+                type="text"
+                value={payload.text}
+                onChange={(e) => setPayload({ ...payload, text: e.target.value })}
+                placeholder="Enter text to echo..."
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+          )}
+
+          {action === 'fetch-url' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+              <input
+                type="url"
+                value={payload.url}
+                onChange={(e) => setPayload({ ...payload, url: e.target.value })}
+                placeholder="https://example.com"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+          )}
+
+          {action === 'book-intent' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                <input
+                  type="text"
+                  value={payload.city}
+                  onChange={(e) => setPayload({ ...payload, city: e.target.value })}
+                  placeholder="Lagos"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  value={payload.date}
+                  onChange={(e) => setPayload({ ...payload, date: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Result Display */}
+        {result && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+            <p className="text-sm font-medium text-green-900 mb-2">Result:</p>
+            <pre className="text-xs text-green-800 overflow-auto max-h-64 whitespace-pre-wrap">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUse}
+            disabled={loading}
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Using...' : 'Use Agent'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

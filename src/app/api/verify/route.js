@@ -1,26 +1,6 @@
 import { NextResponse } from 'next/server';
 
-// Mock verification function (will be replaced with real Privado ID)
-async function verifyZKProof(proof) {
-  // Simulate verification delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Check if proof has required fields
-  if (!proof || !proof.publicSignals || !proof.proof) {
-    return {
-      isValid: false,
-      reason: 'Invalid proof format'
-    };
-  }
-  
-  // Check if age verification claim is true (publicSignals[0] should be '1')
-  const ageVerified = proof.publicSignals[0] === '1';
-  
-  return {
-    isValid: ageVerified,
-    reason: ageVerified ? 'Age verification successful' : 'Age verification failed'
-  };
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export async function POST(request) {
   try {
@@ -29,32 +9,44 @@ export async function POST(request) {
 
     console.log('🔍 Verification request received');
     console.log('Wallet:', walletAddress);
-    console.log('Proof:', proof);
+    console.log('Proof:', JSON.stringify(proof, null, 2));
 
-    // Verify the proof
-    const verificationResult = await verifyZKProof(proof);
+    // Forward to backend for real Polygon ID verification
+    const response = await fetch(`${API_URL}/api/verify-proof`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ proof }),
+    });
 
-    if (verificationResult.isValid) {
-      console.log('✅ Proof verified successfully');
-      
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Verification failed');
+    }
+
+    if (data.success && data.valid) {
+      console.log('✅ Proof verified successfully via backend');
+
       return NextResponse.json({
         decision: 'approved',
-        reason: verificationResult.reason,
-        timestamp: new Date().toISOString(),
-        verifiedBy: 'KYC Platform Verifier',
+        reason: 'Age verification successful via zero-knowledge proof',
+        timestamp: data.timestamp,
+        verifiedBy: 'Polygon ID ZK Verifier',
       });
     } else {
-      console.log('❌ Proof verification failed:', verificationResult.reason);
-      
+      console.log('❌ Proof verification failed');
+
       return NextResponse.json({
         decision: 'rejected',
-        reason: verificationResult.reason,
-        timestamp: new Date().toISOString(),
+        reason: 'Proof verification failed',
+        timestamp: data.timestamp,
       });
     }
   } catch (error) {
     console.error('❌ API Error:', error);
-    
+
     return NextResponse.json(
       {
         decision: 'rejected',

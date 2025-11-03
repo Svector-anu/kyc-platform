@@ -136,3 +136,50 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
  GET /dashboard 200 in 24ms
  GET /agents 200 in 24ms
  GET / 200 in 43ms
+ ✓ Compiled in 1445ms (850 modules)
+ GET / 200 in 251ms
+ ✓ Compiled in 299ms (310 modules)
+ GET / 200 in 46ms
+ GET / 200 in 345ms
+ GET /dashboard 200 in 42ms
+ GET /dashboard 200 in 121ms
+ ✓ Compiled /favicon.ico in 325ms (557 modules)
+ GET /favicon.ico 200 in 580ms
+ GET /favicon.ico 200 in 34ms
+ GET /agents 200 in 90ms
+ GET /agents/did%3Aiden3%3Apolygon%3Aamoy%3AUNAEr7ghGMoyoqFCHVjNGcvCkZmhmJa8pgV7t 200 in 164ms
+ GET /agents 200 in 154ms
+ ✓ Compiled in 3s (850 modules)
+ ✓ Compiled in 458ms (850 modules)
+ ⨯ ./src/app/agents/page.js
+Error:   [31mx[0m Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ,-[[36;1;4m/Users/macbook/kyc-platform/src/app/agents/page.js[0m:306:1]
+ [2m303[0m |       </Link>
+ [2m304[0m |     </div>
+ [2m305[0m |   )
+ [2m306[0m | }
+     : [35;1m^[0m
+     `----
+  [31mx[0m Unexpected eof
+     ,-[[36;1;4m/Users/macbook/kyc-platform/src/app/agents/page.js[0m:306:3]
+ [2m304[0m |     </div>
+ [2m305[0m |   )
+ [2m306[0m | }
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/agents/page.js
+ ✓ Compiled in 665ms (836 modules)
+ ✓ Compiled in 211ms (310 modules)
+ ✓ Compiled in 509ms (310 modules)
+ ✓ Compiled in 240ms (310 modules)
+ ✓ Compiled in 1288ms (850 modules)
+ ✓ Compiled in 405ms (850 modules)
+ ✓ Compiled in 434ms (850 modules)
+ ✓ Compiled in 223ms (310 modules)
+ ✓ Compiled in 255ms (310 modules)
+ ✓ Compiled in 282ms (310 modules)
+ ✓ Compiled in 190ms (310 modules)

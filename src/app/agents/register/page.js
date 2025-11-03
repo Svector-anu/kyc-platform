@@ -41,8 +41,14 @@ export default function RegisterAgentPage() {
     setLoading(true)
 
     try {
-      // Get wallet address (you can integrate MetaMask here)
-      const developerWallet = '0xB3cd522BA5fc2498DfAEa7Df5508D27510bdbd6E' // Replace with actual wallet
+      // Get wallet address from localStorage (stored during KYC)
+      const developerWallet = localStorage.getItem('walletAddress')
+
+      if (!developerWallet) {
+        setError('Please complete KYC verification first')
+        setLoading(false)
+        return
+      }
 
       const res = await fetch('http://localhost:4000/api/agents/register', {
         method: 'POST',
@@ -59,7 +65,9 @@ export default function RegisterAgentPage() {
       const data = await res.json()
 
       if (data.success) {
-        router.push(`/agents/${encodeURIComponent(data.agent.agentDID)}`)
+        // Use publicId for navigation (agentDID is private)
+        const agentId = data.agent.publicId || data.agent.agentDID
+        router.push(`/agents/${encodeURIComponent(agentId)}`)
       } else {
         setError(data.error || 'Registration failed')
       }
