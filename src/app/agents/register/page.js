@@ -43,9 +43,9 @@ export default function RegisterAgentPage() {
     setLoading(true)
 
     try {
-      // Use wallet from form data
-      if (!formData.developerWallet || !formData.developerWallet.trim()) {
-        setError('Please enter your wallet address (same one used for KYC)')
+      // Use connected wallet address
+      if (!isConnected || !address) {
+        setError('Please connect your wallet first')
         setLoading(false)
         return
       }
@@ -58,7 +58,7 @@ export default function RegisterAgentPage() {
           agentType: formData.agentType,
           description: formData.description,
           capabilities: formData.capabilities,
-          developerWallet: formData.developerWallet,
+          developerWallet: address,
         }),
       })
 
