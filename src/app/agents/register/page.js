@@ -114,14 +114,24 @@ export default function RegisterAgentPage() {
               <label className="block text-sm font-medium mb-2">
                 Developer Wallet Address <span className="text-destructive">*</span>
               </label>
-              <input
-                type="text"
-                required
-                value={formData.developerWallet}
-                onChange={(e) => setFormData({ ...formData, developerWallet: e.target.value })}
-                placeholder="0xd0a2362c6cf02f8fdacd3e2abcbfbc625aa0f967"
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
-              />
+              {isConnected ? (
+                <div className="w-full px-4 py-2 border-2 border-green-500/20 bg-green-50 rounded-lg font-mono text-sm flex items-center justify-between">
+                  <span className="text-gray-700">{formData.developerWallet}</span>
+                  <div className="flex items-center text-green-600">
+                    <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-xs font-semibold">Connected</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full px-4 py-2 border-2 border-red-500/20 bg-red-50 rounded-lg text-red-600 flex items-center justify-between">
+                  <span className="text-sm font-medium">Please connect your wallet first</span>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 Use the SAME wallet address you used for KYC verification
               </p>
