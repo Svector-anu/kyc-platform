@@ -28,8 +28,17 @@ export default function KYCModal({ isOpen, onClose, onSuccess }) {
     setLoading(true);
     setError('');
 
+    if (!isConnected || !address) {
+      setError('Please connect your wallet first');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.post(`${API_URL}/api/issue-credential`, formData);
+      const response = await axios.post(`${API_URL}/api/issue-credential`, {
+        ...formData,
+        walletAddress: address
+      });
 
       if (response.data.success) {
         onSuccess(response.data.credential);
