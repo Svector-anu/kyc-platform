@@ -16,17 +16,9 @@ export default function RegisterAgentPage() {
     agentName: '',
     agentType: 'AI agent',
     description: '',
-    capabilities: [],
-    developerWallet: '',
+    capabilities: []
   })
   const [capabilityInput, setCapabilityInput] = useState('')
-
-  // Update developer wallet when connected
-  useEffect(() => {
-    if (address) {
-      setFormData(prev => ({ ...prev, developerWallet: address }))
-    }
-  }, [address])
 
   const addCapability = () => {
     if (capabilityInput.trim() && !formData.capabilities.includes(capabilityInput.trim())) {
