@@ -1,23 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Plus, X } from 'lucide-react'
 import Link from 'next/link'
+import { useWallet } from '@/context/WalletContext'
 
 export default function RegisterAgentPage() {
   const router = useRouter()
+  const { address, isConnected } = useWallet()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
+
   const [formData, setFormData] = useState({
     agentName: '',
     agentType: 'AI agent',
     description: '',
     capabilities: [],
-    developerWallet: localStorage.getItem('walletAddress') || '',
+    developerWallet: '',
   })
   const [capabilityInput, setCapabilityInput] = useState('')
+
+  // Update developer wallet when connected
+  useEffect(() => {
+    if (address) {
+      setFormData(prev => ({ ...prev, developerWallet: address }))
+    }
+  }, [address])
 
   const addCapability = () => {
     if (capabilityInput.trim() && !formData.capabilities.includes(capabilityInput.trim())) {
