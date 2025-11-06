@@ -15,6 +15,7 @@ export default function RegisterAgentPage() {
     agentType: 'AI agent',
     description: '',
     capabilities: [],
+    developerWallet: localStorage.getItem('walletAddress') || '',
   })
   const [capabilityInput, setCapabilityInput] = useState('')
 
@@ -41,11 +42,9 @@ export default function RegisterAgentPage() {
     setLoading(true)
 
     try {
-      // Get wallet address from localStorage (stored during KYC)
-      const developerWallet = localStorage.getItem('walletAddress')
-
-      if (!developerWallet) {
-        setError('Please complete KYC verification first')
+      // Use wallet from form data
+      if (!formData.developerWallet || !formData.developerWallet.trim()) {
+        setError('Please enter your wallet address (same one used for KYC)')
         setLoading(false)
         return
       }
@@ -58,7 +57,7 @@ export default function RegisterAgentPage() {
           agentType: formData.agentType,
           description: formData.description,
           capabilities: formData.capabilities,
-          developerWallet,
+          developerWallet: formData.developerWallet,
         }),
       })
 
@@ -101,6 +100,24 @@ export default function RegisterAgentPage() {
         {/* Form Card */}
         <div className="border border-border rounded-lg bg-card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Developer Wallet */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Developer Wallet Address <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.developerWallet}
+                onChange={(e) => setFormData({ ...formData, developerWallet: e.target.value })}
+                placeholder="0xd0a2362c6cf02f8fdacd3e2abcbfbc625aa0f967"
+                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Use the SAME wallet address you used for KYC verification
+              </p>
+            </div>
+
             {/* Agent Name */}
             <div>
               <label className="block text-sm font-medium mb-2">

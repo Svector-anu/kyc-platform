@@ -329,11 +329,37 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [usageStats, setUsageStats] = useState(null)
+  const [paymentRequired, setPaymentRequired] = useState(false)
+  const [paymentMetadata, setPaymentMetadata] = useState(null)
+  const [paymentProcessing, setPaymentProcessing] = useState(false)
+
+  useEffect(() => {
+    // Fetch usage stats when modal opens
+    fetchUsageStats()
+  }, [])
+
+  async function fetchUsageStats() {
+    try {
+      const userWallet = localStorage.getItem('walletAddress')
+      if (!userWallet) return
+
+      const res = await fetch(`http://localhost:4000/api/agents/${publicId}/usage-stats?userWallet=${userWallet}`)
+      const data = await res.json()
+
+      if (data.success) {
+        setUsageStats(data.stats)
+      }
+    } catch (err) {
+      console.error('Error fetching usage stats:', err)
+    }
+  }
 
   async function handleUse() {
     setLoading(true)
     setError(null)
     setResult(null)
+    setPaymentRequired(false)
 
     try {
       // Get wallet address from localStorage (assuming it's stored during KYC)
@@ -365,8 +391,21 @@ function UseAgentModal({ agent, publicId, onClose }) {
 
       const data = await res.json()
 
+      // HTTP 402 Payment Required
+      if (res.status === 402) {
+        setPaymentRequired(true)
+        setPaymentMetadata(data.payment)
+        setUsageStats(data.usageStats)
+        setLoading(false)
+        return
+      }
+
       if (data.success) {
         setResult(data.result)
+        // Update usage stats after successful use
+        if (data.usageStats) {
+          setUsageStats(data.usageStats)
+        }
       } else {
         setError(data.error || 'Failed to use agent')
       }
@@ -374,6 +413,70 @@ function UseAgentModal({ agent, publicId, onClose }) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handlePayment() {
+    setPaymentProcessing(true)
+    setError(null)
+
+    try {
+      // Simulate payment for now (in production, use thirdweb SDK)
+      // This is where you'd integrate real USDC payment on Base Sepolia
+      const simulatedTxHash = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
+
+      // Create payment proof
+      const paymentProof = {
+        txHash: simulatedTxHash,
+        amount: paymentMetadata.price,
+        currency: paymentMetadata.currency,
+        from: localStorage.getItem('walletAddress'),
+        to: paymentMetadata.payTo,
+        timestamp: Date.now(),
+        network: paymentMetadata.network
+      }
+
+      // Retry the agent usage with payment header
+      const userWallet = localStorage.getItem('walletAddress')
+      let actionPayload = {}
+      if (action === 'echo') {
+        actionPayload = { text: payload.text }
+      } else if (action === 'fetch-url') {
+        actionPayload = { url: payload.url }
+      } else if (action === 'book-intent') {
+        actionPayload = { city: payload.city, date: payload.date }
+      }
+
+      const res = await fetch(`http://localhost:4000/api/agents/${publicId}/use`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Payment': JSON.stringify(paymentProof)
+        },
+        body: JSON.stringify({
+          userWallet,
+          action,
+          payload: actionPayload
+        })
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setResult(data.result)
+        setPaymentRequired(false)
+        setPaymentMetadata(null)
+        // Update usage stats
+        if (data.usageStats) {
+          setUsageStats(data.usageStats)
+        }
+      } else {
+        setError(data.error || 'Payment failed')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setPaymentProcessing(false)
     }
   }
 
@@ -398,6 +501,93 @@ function UseAgentModal({ agent, publicId, onClose }) {
           <p className="text-sm text-gray-600">Agent</p>
           <p className="font-semibold text-gray-900">{agent.agentName}</p>
         </div>
+
+        {/* Usage Stats */}
+        {usageStats && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-blue-900">Usage Statistics</p>
+              <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                usageStats.tier === 'free'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-purple-100 text-purple-700'
+              }`}>
+                {usageStats.tier === 'free' ? 'Free Tier' : 'Pro Tier'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <p className="text-blue-600">Free Uses</p>
+                <p className="font-bold text-blue-900">{usageStats.freeUsed || 0} / 3</p>
+              </div>
+              <div>
+                <p className="text-blue-600">Paid Uses</p>
+                <p className="font-bold text-blue-900">{usageStats.paidUsed || 0}</p>
+              </div>
+            </div>
+            {usageStats.freeRemaining > 0 && (
+              <p className="text-xs text-green-600 mt-2">
+                {usageStats.freeRemaining} free {usageStats.freeRemaining === 1 ? 'use' : 'uses'} remaining
+              </p>
+            )}
+            {usageStats.freeRemaining === 0 && (
+              <p className="text-xs text-purple-600 mt-2">
+                0.01 USDC per use (Base Sepolia)
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Payment Required Notice */}
+        {paymentRequired && paymentMetadata && (
+          <div className="mb-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-xl">
+            <div className="flex items-start mb-3">
+              <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-yellow-900 mb-1">Payment Required</p>
+                <p className="text-xs text-yellow-700 mb-2">
+                  You've used all 3 free uses. Payment is required to continue.
+                </p>
+                <div className="bg-white rounded-lg p-2 text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount:</span>
+                    <span className="font-bold text-gray-900">{paymentMetadata.price} {paymentMetadata.currency}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Network:</span>
+                    <span className="font-mono text-gray-900">{paymentMetadata.network}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Pay to:</span>
+                    <span className="font-mono text-gray-900 truncate ml-2 max-w-[180px]" title={paymentMetadata.payTo}>
+                      {paymentMetadata.payTo.slice(0, 8)}...{paymentMetadata.payTo.slice(-6)}
+                    </span>
+                  </div>
+                </div>
+                <a
+                  href="https://www.coinbase.com/faucets/base-sepolia-faucet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                  Get Test USDC (Sepolia Faucet)
+                </a>
+              </div>
+            </div>
+            <button
+              onClick={handlePayment}
+              disabled={paymentProcessing}
+              className="w-full py-2.5 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {paymentProcessing ? 'Processing Payment...' : `Pay ${paymentMetadata.price} USDC & Use Agent`}
+            </button>
+          </div>
+        )}
 
         {/* Action Selector */}
         <div className="mb-4">
@@ -491,13 +681,15 @@ function UseAgentModal({ agent, publicId, onClose }) {
           >
             Cancel
           </button>
-          <button
-            onClick={handleUse}
-            disabled={loading}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Using...' : 'Use Agent'}
-          </button>
+          {!paymentRequired && (
+            <button
+              onClick={handleUse}
+              disabled={loading}
+              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Using...' : 'Use Agent'}
+            </button>
+          )}
         </div>
       </div>
     </div>
