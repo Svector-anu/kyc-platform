@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import { useWallet } from '@/context/WalletContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function KYCModal({ isOpen, onClose, onSuccess }) {
-  const { address, isConnected } = useWallet();
   const [formData, setFormData] = useState({
     name: '',
     dateOfBirth: '',
-    email: ''
+    email: '',
+    walletAddress: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,17 +27,8 @@ export default function KYCModal({ isOpen, onClose, onSuccess }) {
     setLoading(true);
     setError('');
 
-    if (!isConnected || !address) {
-      setError('Please connect your wallet first');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await axios.post(`${API_URL}/api/issue-credential`, {
-        ...formData,
-        walletAddress: address
-      });
+      const response = await axios.post(`${API_URL}/api/issue-credential`, formData);
 
       if (response.data.success) {
         onSuccess(response.data.credential);
@@ -148,23 +138,19 @@ export default function KYCModal({ isOpen, onClose, onSuccess }) {
                 />
               </div>
 
-              {/* Connected Wallet */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">Connected Wallet</p>
-                    {isConnected ? (
-                      <p className="font-mono text-sm text-blue-600">{address}</p>
-                    ) : (
-                      <p className="text-sm text-red-600">Not connected - please connect wallet</p>
-                    )}
-                  </div>
-                  {isConnected && (
-                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Wallet Address
+                </label>
+                <input
+                  type="text"
+                  name="walletAddress"
+                  value={formData.walletAddress}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 outline-none font-mono text-sm"
+                  placeholder="0x..."
+                />
               </div>
 
               {/* Buttons */}
@@ -178,7 +164,7 @@ export default function KYCModal({ isOpen, onClose, onSuccess }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !isConnected}
+                  disabled={loading}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex items-center justify-center"
                 >
                   {loading ? (
