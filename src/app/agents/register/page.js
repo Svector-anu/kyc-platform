@@ -4,11 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Plus, X } from 'lucide-react'
 import Link from 'next/link'
-import { useWallet } from '@/context/WalletContext'
 
 export default function RegisterAgentPage() {
   const router = useRouter()
-  const { address, isConnected } = useWallet()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -16,7 +14,8 @@ export default function RegisterAgentPage() {
     agentName: '',
     agentType: 'AI agent',
     description: '',
-    capabilities: []
+    capabilities: [],
+    developerWallet: ''
   })
   const [capabilityInput, setCapabilityInput] = useState('')
 
@@ -43,9 +42,8 @@ export default function RegisterAgentPage() {
     setLoading(true)
 
     try {
-      // Use connected wallet address
-      if (!isConnected || !address) {
-        setError('Please connect your wallet first')
+      if (!formData.developerWallet || !formData.developerWallet.trim()) {
+        setError('Please enter your wallet address (same one used for KYC)')
         setLoading(false)
         return
       }
@@ -58,7 +56,7 @@ export default function RegisterAgentPage() {
           agentType: formData.agentType,
           description: formData.description,
           capabilities: formData.capabilities,
-          developerWallet: address,
+          developerWallet: formData.developerWallet,
         }),
       })
 
@@ -101,26 +99,22 @@ export default function RegisterAgentPage() {
         {/* Form Card */}
         <div className="border border-border rounded-lg bg-card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Connected Wallet */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium mb-1">Developer Wallet (Connected)</p>
-                  {isConnected ? (
-                    <p className="font-mono text-sm text-blue-600">{address}</p>
-                  ) : (
-                    <p className="text-sm text-red-600">Not connected - please connect wallet</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Must be the same wallet used for KYC verification
-                  </p>
-                </div>
-                {isConnected && (
-                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
+            {/* Developer Wallet */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Developer Wallet Address <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.developerWallet}
+                onChange={(e) => setFormData({ ...formData, developerWallet: e.target.value })}
+                placeholder="0x..."
+                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Use the SAME wallet address you used for KYC verification
+              </p>
             </div>
 
             {/* Agent Name */}
