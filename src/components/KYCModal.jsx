@@ -31,6 +31,8 @@ export default function KYCModal({ isOpen, onClose, onSuccess }) {
       const response = await axios.post(`${API_URL}/api/issue-credential`, formData);
 
       if (response.data.success) {
+        // Save wallet address to localStorage for agent usage
+        localStorage.setItem('walletAddress', formData.walletAddress);
         onSuccess(response.data.credential);
       }
     } catch (err) {
