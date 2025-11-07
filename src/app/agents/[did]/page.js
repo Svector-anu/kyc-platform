@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Star, Copy, Check } from 'lucide-react'
+import PaymentModal from '@/components/PaymentModal'
 
 export default function AgentDetailPage() {
   const params = useParams()
@@ -281,6 +282,9 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [paymentRequired, setPaymentRequired] = useState(false)
+  const [paymentData, setPaymentData] = useState(null)
+  const [paymentProof, setPaymentProof] = useState(null)
 
   async function handleUse() {
     setLoading(true)
@@ -306,7 +310,10 @@ function UseAgentModal({ agent, publicId, onClose }) {
 
       const res = await fetch(`http://localhost:4000/api/agents/${publicId}/use`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(paymentProof && { 'x-payment': JSON.stringify(paymentProof) })
+        },
         body: JSON.stringify({
           userWallet,
           action,
@@ -315,6 +322,14 @@ function UseAgentModal({ agent, publicId, onClose }) {
       })
 
       const data = await res.json()
+
+      // Detect HTTP 402 Payment Required
+      if (res.status === 402) {
+        setPaymentRequired(true)
+        setPaymentData(data.payment)
+        setLoading(false)
+        return
+      }
 
       if (data.success) {
         setResult(data.result)
@@ -326,6 +341,17 @@ function UseAgentModal({ agent, publicId, onClose }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handlePaymentSuccess(proof) {
+    setPaymentProof(proof)
+    setPaymentRequired(false)
+    handleUse() // Retry with payment proof
+  }
+
+  function handlePaymentCancel() {
+    setPaymentRequired(false)
+    setLoading(false)
   }
 
   return (
@@ -451,6 +477,15 @@ function UseAgentModal({ agent, publicId, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {paymentRequired && paymentData && (
+        <PaymentModal
+          paymentData={paymentData}
+          onSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
+        />
+      )}
     </div>
   )
 }
