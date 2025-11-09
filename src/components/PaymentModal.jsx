@@ -218,27 +218,38 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <button
+              onClick={onCancel}
+              disabled={loading}
+              className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePayment}
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Sending...
+                </span>
+              ) : (
+                `Pay ${paymentData.price} ${paymentData.currency}`
+              )}
+            </button>
+          </div>
+
+          {/* Test Mode Button */}
           <button
-            onClick={onCancel}
+            onClick={handleSkipPayment}
             disabled={loading}
-            className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full px-6 py-2 border-2 border-yellow-300 bg-yellow-50 text-yellow-800 rounded-xl font-medium hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handlePayment}
-            disabled={loading}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Sending...
-              </span>
-            ) : (
-              `Pay ${paymentData.price} ${paymentData.currency}`
-            )}
+            🧪 Skip Payment (Test Mode)
           </button>
         </div>
 
