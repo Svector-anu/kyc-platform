@@ -286,10 +286,13 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [paymentData, setPaymentData] = useState(null)
   const [paymentProof, setPaymentProof] = useState(null)
 
-  async function handleUse() {
+  async function handleUse(proof = null) {
     setLoading(true)
     setError(null)
     setResult(null)
+
+    // Use the passed proof or the state proof
+    const paymentProofToUse = proof || paymentProof;
 
     try {
       const userWallet = localStorage.getItem('walletAddress')
@@ -312,7 +315,7 @@ function UseAgentModal({ agent, publicId, onClose }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(paymentProof && { 'x-payment': JSON.stringify(paymentProof) })
+          ...(paymentProofToUse && { 'x-payment': JSON.stringify(paymentProofToUse) })
         },
         body: JSON.stringify({
           userWallet,
@@ -346,7 +349,7 @@ function UseAgentModal({ agent, publicId, onClose }) {
   function handlePaymentSuccess(proof) {
     setPaymentProof(proof)
     setPaymentRequired(false)
-    handleUse() // Retry with payment proof
+    handleUse(proof) // Retry with payment proof passed directly
   }
 
   function handlePaymentCancel() {
