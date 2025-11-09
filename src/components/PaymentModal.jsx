@@ -7,6 +7,22 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
   const [txHash, setTxHash] = useState('');
   const [error, setError] = useState('');
 
+  const handleSkipPayment = () => {
+    // Test mode: simulate successful payment
+    const mockPaymentProof = {
+      txHash: 'test-payment-' + Date.now(),
+      amount: paymentData.price,
+      from: '0xd0a2362c6cf02f8fdacd3e2abcbfbc625aa0f967',
+      to: paymentData.payTo,
+      currency: paymentData.currency,
+      network: paymentData.network,
+      timestamp: new Date().toISOString(),
+      testMode: true
+    };
+
+    onSuccess(mockPaymentProof);
+  };
+
   const handlePayment = async () => {
     setLoading(true);
     setError('');
@@ -18,13 +34,15 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
         throw new Error('Please install MetaMask to make payments');
       }
 
-      // 2. Connect to wallet
+      // 2. Request account access
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+      // 3. Create provider and signer
       const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // 3. Check network (Base Sepolia chainId: 84532)
+      // 4. Check network (Base Sepolia chainId: 84532)
       const network = await provider.getNetwork();
       if (Number(network.chainId) !== paymentData.chainId) {
         // Try to switch network
