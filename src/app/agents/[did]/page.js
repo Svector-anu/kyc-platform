@@ -472,7 +472,7 @@ function UseAgentModal({ agent, publicId, onClose }) {
             Cancel
           </button>
           <button
-            onClick={handleUse}
+            onClick={() => handleUse()}
             disabled={loading}
             className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
