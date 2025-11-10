@@ -345,7 +345,6 @@ function UseAgentModal({ agent, publicId, onClose }) {
   }
 
   function handlePaymentSuccess(proof) {
-    setPaymentProof(proof)
     setPaymentRequired(false)
     handleUse(proof) // Retry with payment proof passed directly
   }
