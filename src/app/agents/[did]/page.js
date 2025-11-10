@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Star, Copy, Check } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
+import { createThirdwebClient } from 'thirdweb'
+import { createWallet, injectedProvider } from 'thirdweb/wallets'
+import { wrapFetchWithPayment } from 'thirdweb/x402'
 
 export default function AgentDetailPage() {
   const params = useParams()
@@ -285,14 +288,23 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [paymentRequired, setPaymentRequired] = useState(false)
   const [paymentData, setPaymentData] = useState(null)
   const [paymentProof, setPaymentProof] = useState(null)
+  const [thirdwebWallet, setThirdwebWallet] = useState(null)
+  const [thirdwebClient, setThirdwebClient] = useState(null)
+
+  // Initialize thirdweb client on mount
+  useEffect(() => {
+    // For x402 payments, we need a client ID from thirdweb dashboard
+    // For now, create a basic client that will work with injected wallet
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || 'demo-client-id'
+    })
+    setThirdwebClient(client)
+  }, [])
 
   async function handleUse(proof = null) {
     setLoading(true)
     setError(null)
     setResult(null)
-
-    // Use the passed proof or the state proof
-    const paymentProofToUse = proof || paymentProof;
 
     try {
       const userWallet = localStorage.getItem('walletAddress')
@@ -311,11 +323,12 @@ function UseAgentModal({ agent, publicId, onClose }) {
         actionPayload = { city: payload.city, date: payload.date }
       }
 
+      // Make request with payment proof if available
       const res = await fetch(`http://localhost:4000/api/agents/${publicId}/use`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(paymentProofToUse && { 'x-payment': JSON.stringify(paymentProofToUse) })
+          ...(proof && { 'x-payment': JSON.stringify(proof) })
         },
         body: JSON.stringify({
           userWallet,
@@ -326,10 +339,10 @@ function UseAgentModal({ agent, publicId, onClose }) {
 
       const data = await res.json()
 
-      // Detect HTTP 402 Payment Required
+      // Detect HTTP 402 Payment Required - show payment modal
       if (res.status === 402) {
         setPaymentRequired(true)
-        setPaymentData(data.payment)
+        setPaymentData(data.paymentOptions[0]) // Use first payment option from array
         setLoading(false)
         return
       }
@@ -340,6 +353,7 @@ function UseAgentModal({ agent, publicId, onClose }) {
         setError(data.error || 'Failed to use agent')
       }
     } catch (err) {
+      console.error('❌ Error:', err)
       setError(err.message)
     } finally {
       setLoading(false)
