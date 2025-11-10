@@ -5,9 +5,6 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Star, Copy, Check } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
-import { createThirdwebClient } from 'thirdweb'
-import { createWallet, injectedProvider } from 'thirdweb/wallets'
-import { wrapFetchWithPayment } from 'thirdweb/x402'
 
 export default function AgentDetailPage() {
   const params = useParams()
