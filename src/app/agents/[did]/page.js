@@ -284,19 +284,6 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [error, setError] = useState(null)
   const [paymentRequired, setPaymentRequired] = useState(false)
   const [paymentData, setPaymentData] = useState(null)
-  const [paymentProof, setPaymentProof] = useState(null)
-  const [thirdwebWallet, setThirdwebWallet] = useState(null)
-  const [thirdwebClient, setThirdwebClient] = useState(null)
-
-  // Initialize thirdweb client on mount
-  useEffect(() => {
-    // For x402 payments, we need a client ID from thirdweb dashboard
-    // For now, create a basic client that will work with injected wallet
-    const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || 'demo-client-id'
-    })
-    setThirdwebClient(client)
-  }, [])
 
   async function handleUse(proof = null) {
     setLoading(true)
