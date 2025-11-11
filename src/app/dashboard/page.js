@@ -3,51 +3,79 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useAccount } from 'wagmi'
 
 export default function Dashboard() {
   const searchParams = useSearchParams()
   const credentialId = searchParams.get('credentialId')
+  const { address, isConnected } = useAccount()
 
-  const [credential, setCredential] = useState(null)
+  const [credentials, setCredentials] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedCredential, setSelectedCredential] = useState(null)
 
   useEffect(() => {
-    async function fetchCredential() {
-      if (!credentialId) {
+    async function fetchCredentials() {
+      // If credentialId is provided, fetch that specific credential (legacy support)
+      if (credentialId) {
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+          const response = await fetch(`${API_URL}/api/credential/${credentialId}`)
+          const data = await response.json()
+
+          if (data.success && data.credential) {
+            setCredentials([data.credential])
+            setSelectedCredential(data.credential)
+          }
+        } catch (error) {
+          console.error('Error fetching credential:', error)
+        } finally {
+          setLoading(false)
+        }
+        return
+      }
+
+      // Otherwise, fetch all credentials for connected wallet
+      if (!address) {
         setLoading(false)
         return
       }
 
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
-        const response = await fetch(`${API_URL}/api/credential/${credentialId}`)
+        console.log(`📋 Fetching credentials for wallet: ${address}`)
+        const response = await fetch(`${API_URL}/api/credentials/wallet/${address}`)
         const data = await response.json()
 
-        if (data.success && data.credential) {
-          setCredential(data.credential)
+        if (data.success && data.credentials) {
+          console.log(`✅ Found ${data.credentials.length} credentials`)
+          setCredentials(data.credentials)
+          if (data.credentials.length > 0) {
+            setSelectedCredential(data.credentials[0])
+          }
         } else {
-          console.error('Failed to fetch credential:', data.error)
-          setCredential(null)
+          console.error('Failed to fetch credentials:', data.error)
+          setCredentials([])
         }
       } catch (error) {
-        console.error('Error fetching credential:', error)
-        setCredential(null)
+        console.error('Error fetching credentials:', error)
+        setCredentials([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCredential()
-  }, [credentialId])
+    fetchCredentials()
+  }, [credentialId, address])
 
   const handleDownloadJSON = () => {
-    if (!credential) return
-    const dataStr = JSON.stringify(credential, null, 2)
+    if (!selectedCredential) return
+    const dataStr = JSON.stringify(selectedCredential, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `credential-${credential.id}.json`
+    link.download = `credential-${selectedCredential.id}.json`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -67,7 +95,7 @@ export default function Dashboard() {
     )
   }
 
-  if (!credential) {
+  if (!isConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         {/* Navigation */}
@@ -75,12 +103,57 @@ export default function Dashboard() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3" style={{ backgroundColor: '#0046FF' }}>
+                  <span className="text-white font-bold text-sm">0 0</span>
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-xl font-bold" style={{ color: '#000000' }}>
+                  Billions
+                </span>
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Empty State */}
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6">
+              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Connect Your Wallet</h2>
+            <p className="text-gray-600 mb-8">
+              Please connect your wallet to view your credentials.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center px-6 py-3 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              style={{ backgroundColor: '#0046FF' }}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Go to Homepage
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (credentials.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        {/* Navigation */}
+        <nav className="bg-white border-b border-gray-200">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3" style={{ backgroundColor: '#0046FF' }}>
+                  <span className="text-white font-bold text-sm">0 0</span>
+                </div>
+                <span className="text-xl font-bold" style={{ color: '#000000' }}>
                   Billions
                 </span>
               </Link>
@@ -96,13 +169,14 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">No Credential Found</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">No Credentials Found</h2>
             <p className="text-gray-600 mb-8">
               You haven't completed KYC verification yet. Complete the verification process to access your dashboard.
             </p>
             <Link
               href="/"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              className="inline-flex items-center px-6 py-3 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              style={{ backgroundColor: '#0046FF' }}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -114,6 +188,8 @@ export default function Dashboard() {
       </div>
     )
   }
+
+  const credential = selectedCredential
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -168,6 +244,53 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
+          {/* Credentials List */}
+          {credentials.length > 1 && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Your Credentials ({credentials.length})
+              </h3>
+              <div className="grid gap-3">
+                {credentials.map((cred) => (
+                  <button
+                    key={cred.id}
+                    onClick={() => setSelectedCredential(cred)}
+                    className={`p-4 rounded-xl text-left transition-all ${
+                      selectedCredential?.id === cred.id
+                        ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300'
+                        : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          selectedCredential?.id === cred.id
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600'
+                            : 'bg-gray-300'
+                        }`}>
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{cred.credentialType}</p>
+                          <p className="text-sm text-gray-600">
+                            Issued: {new Date(cred.issueDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-lg">
+                          {cred.status}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Status Card */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-8">
             <div className="flex items-center justify-between mb-6">
