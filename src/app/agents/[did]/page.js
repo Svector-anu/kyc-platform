@@ -506,7 +506,8 @@ function UseAgentModal({ agent, publicId, onClose }) {
             <button
               onClick={() => handleUse()}
               disabled={loading || paymentInProgress}
-              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 rounded-xl text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#0046FF' }}
             >
               {loading || paymentInProgress ? 'Processing...' : 'Use Agent'}
             </button>
@@ -517,7 +518,8 @@ function UseAgentModal({ agent, publicId, onClose }) {
                 setResult(null)
                 setError(null)
               }}
-              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold hover:shadow-lg transition-all"
+              className="flex-1 px-4 py-3 rounded-xl text-white font-semibold hover:shadow-lg transition-all"
+              style={{ backgroundColor: '#61DA53' }}
             >
               Use Again
             </button>
