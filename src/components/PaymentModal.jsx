@@ -155,18 +155,28 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Required</h2>
           <p className="text-gray-600">
-            This agent requires payment after 3 free uses
+            {paymentData.bundleSize
+              ? `Purchase a bundle of ${paymentData.bundleSize} uses`
+              : 'This agent requires payment after 3 free uses'}
           </p>
         </div>
 
         {/* Payment Details */}
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl mb-6 space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600 font-medium">Amount:</span>
+            <span className="text-gray-600 font-medium">
+              {paymentData.bundleSize ? 'Bundle Price:' : 'Amount:'}
+            </span>
             <span className="text-2xl font-bold text-gray-900">
               {paymentData.price} {paymentData.currency}
             </span>
           </div>
+          {paymentData.bundleSize && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">You'll get:</span>
+              <span className="font-semibold text-green-600">{paymentData.bundleSize} uses</span>
+            </div>
+          )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-600">Network:</span>
             <span className="font-semibold text-gray-900 capitalize">{paymentData.network}</span>
