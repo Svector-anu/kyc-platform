@@ -245,7 +245,8 @@ export default function AgentDetailPage() {
         <div className="flex gap-4">
           <button
             onClick={() => setShowUseModal(true)}
-            className="flex-1 text-center py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+            className="flex-1 text-center py-3 rounded-lg text-white font-semibold hover:shadow-lg transition-all"
+            style={{ backgroundColor: '#0046FF' }}
           >
             Use Agent
           </button>
