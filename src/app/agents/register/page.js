@@ -89,7 +89,7 @@ export default function RegisterAgentPage() {
         </Link>
 
         {/* Header */}
-        <div className="bg-gradient-brand text-white rounded-lg p-8 mb-8">
+        <div className="text-white rounded-lg p-8 mb-8" style={{ backgroundColor: '#0046FF' }}>
           <h1 className="text-3xl font-bold mb-2">Register Agent</h1>
           <p className="text-white/90">
             Create an agent identity and start collecting attestations.
