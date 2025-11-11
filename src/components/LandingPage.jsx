@@ -18,7 +18,7 @@ export default function LandingPage() {
     <>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 py-24 text-white">
+        <section className="relative overflow-hidden py-24 text-white" style={{ backgroundColor: '#0046FF' }}>
           {/* Animated Background Elements */}
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
@@ -108,7 +108,7 @@ export default function LandingPage() {
               {/* Step 1 */}
               <div className="relative p-8 bg-white rounded-2xl shadow-lg border-2 border-blue-100 hover:shadow-xl transition-shadow">
                 <div className="absolute -top-4 left-8">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg" style={{ backgroundColor: '#0046FF' }}>
                     1
                   </div>
                 </div>
@@ -126,9 +126,9 @@ export default function LandingPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="relative p-8 bg-white rounded-2xl shadow-lg border-2 border-purple-100 hover:shadow-xl transition-shadow">
+              <div className="relative p-8 bg-white rounded-2xl shadow-lg border-2 hover:shadow-xl transition-shadow" style={{ borderColor: '#E6EFFF' }}>
                 <div className="absolute -top-4 left-8">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg" style={{ backgroundColor: '#0046FF' }}>
                     2
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function LandingPage() {
               {/* Step 3 */}
               <div className="relative p-8 bg-white rounded-2xl shadow-lg border-2 border-green-100 hover:shadow-xl transition-shadow">
                 <div className="absolute -top-4 left-8">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg" style={{ backgroundColor: '#61DA53' }}>
                     3
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function LandingPage() {
 
                 <div className="space-y-4">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3 mt-1">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-1" style={{ backgroundColor: '#61DA53' }}>
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -194,7 +194,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3 mt-1">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-1" style={{ backgroundColor: '#61DA53' }}>
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -206,7 +206,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3 mt-1">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-1" style={{ backgroundColor: '#61DA53' }}>
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -218,7 +218,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3 mt-1">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-1" style={{ backgroundColor: '#61DA53' }}>
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -232,7 +232,7 @@ export default function LandingPage() {
               </div>
 
               <div className="relative">
-                <div className="relative p-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl">
+                <div className="relative p-8 rounded-2xl shadow-2xl" style={{ backgroundColor: '#0046FF' }}>
                   <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
                   <div className="relative text-white">
                     <svg className="w-24 h-24 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
