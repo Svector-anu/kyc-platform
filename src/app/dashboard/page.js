@@ -430,15 +430,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-gray-200 mt-16">
-        <div className="container mx-auto text-center">
-          <p className="text-sm text-gray-500">
-            © 2025 Billions. Powered by <span className="font-semibold">Polygon ID</span> & <span className="font-semibold">Zero-Knowledge Cryptography</span>
-          </p>
-        </div>
-      </footer>
     </div>
   )
 }
