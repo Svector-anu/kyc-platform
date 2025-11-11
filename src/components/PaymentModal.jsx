@@ -124,6 +124,7 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
       console.log('Transaction confirmed:', receipt);
 
       // 8. Call success callback with payment proof
+      console.log('✅ Payment successful! Calling onSuccess callback...');
       onSuccess({
         txHash: tx.hash,
         amount: paymentData.price,
@@ -134,6 +135,7 @@ export default function PaymentModal({ paymentData, onSuccess, onCancel }) {
         timestamp: new Date().toISOString()
       });
 
+      // Modal will be closed by parent component
       setLoading(false);
 
     } catch (err) {

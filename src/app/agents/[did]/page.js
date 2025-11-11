@@ -284,8 +284,10 @@ function UseAgentModal({ agent, publicId, onClose }) {
   const [error, setError] = useState(null)
   const [paymentRequired, setPaymentRequired] = useState(false)
   const [paymentData, setPaymentData] = useState(null)
+  const [paymentInProgress, setPaymentInProgress] = useState(false)
 
   async function handleUse(proof = null) {
+    console.log('🚀 handleUse called with proof:', proof ? 'YES' : 'NO')
     setLoading(true)
     setError(null)
     setResult(null)
@@ -322,18 +324,32 @@ function UseAgentModal({ agent, publicId, onClose }) {
       })
 
       const data = await res.json()
+      console.log('📨 Response status:', res.status, 'data:', data)
 
       // Detect HTTP 402 Payment Required - show payment modal
       if (res.status === 402) {
-        setPaymentRequired(true)
-        setPaymentData(data.paymentOptions[0]) // Use first payment option from array
-        setLoading(false)
-        return
+        console.log('💳 402 Payment Required detected')
+        if (data.paymentOptions && data.paymentOptions[0]) {
+          console.log('📋 Setting payment modal visible')
+          setPaymentRequired(true)
+          setPaymentData(data.paymentOptions[0]) // Use first payment option from array
+          setLoading(false)
+          return
+        } else {
+          // 402 but no payment options - likely an error
+          console.error('❌ 402 but no payment options provided')
+          setError(data.error || data.message || 'Payment required but no payment options provided')
+          setLoading(false)
+          return
+        }
       }
 
       if (data.success) {
+        console.log('✅ Success! Result:', data.result)
         setResult(data.result)
+        setPaymentRequired(false) // Ensure payment modal is closed on success
       } else {
+        console.error('❌ Request failed:', data.error)
         setError(data.error || 'Failed to use agent')
       }
     } catch (err) {
@@ -344,9 +360,26 @@ function UseAgentModal({ agent, publicId, onClose }) {
     }
   }
 
-  function handlePaymentSuccess(proof) {
+  async function handlePaymentSuccess(proof) {
+    console.log('💰 handlePaymentSuccess called with proof:', proof)
+    console.log('🔄 Closing payment modal and retrying request with payment proof...')
+
+    // Set payment in progress to prevent double-clicks
+    setPaymentInProgress(true)
+
+    // Close payment modal and clear payment data
     setPaymentRequired(false)
-    handleUse(proof) // Retry with payment proof passed directly
+    setPaymentData(null)
+    console.log('✅ Payment modal closed (paymentRequired=false, paymentData=null)')
+
+    // Small delay to ensure modal closes before making request
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Now retry with payment proof
+    await handleUse(proof)
+
+    // Payment flow complete
+    setPaymentInProgress(false)
   }
 
   function handlePaymentCancel() {
@@ -466,15 +499,28 @@ function UseAgentModal({ agent, publicId, onClose }) {
             onClick={onClose}
             className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
           >
-            Cancel
+            {result ? 'Close' : 'Cancel'}
           </button>
-          <button
-            onClick={() => handleUse()}
-            disabled={loading}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Using...' : 'Use Agent'}
-          </button>
+          {!result && (
+            <button
+              onClick={() => handleUse()}
+              disabled={loading || paymentInProgress}
+              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading || paymentInProgress ? 'Processing...' : 'Use Agent'}
+            </button>
+          )}
+          {result && (
+            <button
+              onClick={() => {
+                setResult(null)
+                setError(null)
+              }}
+              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold hover:shadow-lg transition-all"
+            >
+              Use Again
+            </button>
+          )}
         </div>
       </div>
 
